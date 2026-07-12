@@ -1,82 +1,57 @@
-# Zulip OAuth client (showcase)
+# Zulip OAuth client
 
-Minimal third-party app that signs users in with **Zulip as an OAuth2
-provider** ([zulip/zulip#38610](https://github.com/zulip/zulip/pull/38610) /
-[#17042](https://github.com/zulip/zulip/issues/17042)).
+Demo app that signs in via Zulip's experimental OAuth2 provider and calls the
+Zulip API with a bearer token.
 
-Flow:
+For the provider work, see [zulip/zulip#38610](https://github.com/zulip/zulip/pull/38610).
 
-1. Authorization code + **PKCE** against `{realm}/o/authorize/`
-2. Code exchange at `{realm}/o/token/`
-3. Zulip REST call with `Authorization: Bearer <access_token>` → `/api/v1/users/me`
+<details>
+<summary>Screenshots</summary>
 
-Tokens use the experimental `api` scope (same access model as the user’s API key).
+Login:
 
-## Prerequisites
+![Login](docs/screenshots/01-login.png)
 
-- A Zulip server with `ENABLE_ZULIP_OAUTH = True` (default in the Zulip
-  development environment on the OAuth-provider branch).
-- Python 3.11+.
+Signed in (profile, status toggle, stored tokens):
 
-## Register an OAuth application in Zulip
+![Signed in](docs/screenshots/02-signed-in.png)
 
-1. Log into the realm you will use (e.g. `http://zulip.zulipdev.com:9991`).
-2. Open **`/o/applications/`** → register an application.
-3. Grant type is fixed to **Authorization code**.
-4. Set **Redirect URIs** to:
+</details>
+
+## Setup
+
+1. Run a local Zulip server with `ENABLE_ZULIP_OAUTH = True` (default in the
+   development environment on the OAuth-provider branch).
+
+2. While logged into the realm, open
+   `http://localhost:9991/o/applications/`, register an app
+   (authorization code), and set the redirect URI to:
 
    ```text
    http://127.0.0.1:5050/callback
    ```
 
-5. Copy the **Client id** and **Client secret**.
+3. Clone and configure this client:
 
-## Run this client
+   ```bash
+   git clone git@github.com:apoorvapendse/zulip-oauth-client.git
+   cd zulip-oauth-client
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   cp .env.example .env
+   ```
 
-```bash
-cd ~/Documents/programming/zulip-oauth-client
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+   Set `ZULIP_REALM_URL`, `ZULIP_CLIENT_ID`, and `ZULIP_CLIENT_SECRET` in `.env`
+   to match the realm and the application you registered.
 
-cp .env.example .env
-# edit .env: ZULIP_REALM_URL, ZULIP_CLIENT_ID, ZULIP_CLIENT_SECRET
+4. Start the client and open it:
 
-python app.py
-```
+   ```bash
+   python app.py
+   ```
 
-Open [http://127.0.0.1:5050/](http://127.0.0.1:5050/) → **Log in with Zulip**.
+   http://127.0.0.1:5050/
 
-### `.env` keys
-
-| Variable | Meaning |
-|----------|---------|
-| `ZULIP_REALM_URL` | Realm origin, no trailing slash (must match the host you registered the app on) |
-| `ZULIP_CLIENT_ID` | From `/o/applications/` |
-| `ZULIP_CLIENT_SECRET` | From `/o/applications/` |
-| `OAUTH_REDIRECT_URI` | Must match a registered redirect URI exactly |
-| `FLASK_PORT` | Local port (default `5050`) |
-
-## Dev networking notes
-
-- Zulip’s Docker/Vagrant dev server often listens on **port 9991**.
-- Prefer the realm hostname (`zulip.zulipdev.com`) when that is how you
-  browse Zulip; subdomain checks apply to API calls.
-- If the browser cannot resolve `*.zulipdev.com`, add a hosts entry or
-  use whatever origin you already use for the web app—**keep the OAuth
-  app, this client’s `ZULIP_REALM_URL`, and the browser on the same origin**.
-
-## Project layout
-
-```text
-app.py           Flask app: /login → Zulip → /callback → /api/v1/users/me
-requirements.txt flask, requests, python-dotenv
-.env.example     configuration template
-```
-
-## Not production-ready
-
-This is a **local demo** for the experimental provider: secrets in `.env`,
-Flask debug server, session cookie storage for the access token, no refresh
-token handling UI. Use it to exercise the Zulip endpoints, not as a template
-for a production integration without hardening.
+Log in with Zulip, then use the page to inspect tokens and try a sample API
+call (profile + toggle user status).

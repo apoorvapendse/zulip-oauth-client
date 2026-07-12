@@ -7,3 +7,4 @@ __pycache__/
 .DS_Store
 *.egg-info/
 .pytest_cache/
+.token_cache.json
